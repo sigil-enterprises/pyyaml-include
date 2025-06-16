@@ -20,6 +20,6 @@ jobs:
     if: startsWith(github.event.ref, 'refs/tags/v')
     needs: build
     secrets:
-      REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO_TOKEN: ${{ secrets.PAT_ORG_REPO_READ }}
     with:
       image_name: ${{ github.event.repository.name }}
