@@ -14,7 +14,6 @@ jobs:
       REPO_TOKEN: ${{ secrets.PAT_ORG_REPO_READ }}
       BADGES_TOKEN: ${{ secrets.PAT_BADGES }}
 
-
   ghcr:
     uses: opvance/actions/.github/workflows/build-image-and-push-to-ghcr.yml@v1
     if: startsWith(github.event.ref, 'refs/tags/v')
