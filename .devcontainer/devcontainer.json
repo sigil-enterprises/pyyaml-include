@@ -1,12 +1,12 @@
 {
-  "name": "sigil/pyyaml-include",
+  "name": "sigil-enterprises/pyyaml-include",
   "dockerComposeFile": [
     "../docker-compose.yaml",
     "./docker-compose.yaml"
   ],
   "workspaceFolder": "/app",
   "service": "app",
-  "initializeCommand": "bash .devcontainer/setup-host",
+  "initializeCommand": "$((which -a python3 || which -a python) 2>/dev/null | head -n 1) -c \"import os, subprocess, sys; script_sh = '.devcontainer/setup-host'; script_cmd = '.devcontainer/setup-host.cmd'; os_is_nt = os.name == 'nt'; cmd = [script_cmd] if os_is_nt else ['bash', script_sh]; use_shell = True if os_is_nt else False; subprocess.run(cmd, shell=use_shell, check=True)\"",
   "onCreateCommand": "bash .devcontainer/setup-editor",
   "customizations": {
     "vscode": {

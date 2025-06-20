@@ -3,35 +3,22 @@ name: Build
 on: push
 
 permissions:
-  contents: read
+  contents: write
   packages: write
-
-env:
-  GITHUB_TOKEN: ${{ secrets.PAT_SIGIL_CORE_READ }}
 
 jobs:
 
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - run: |
-          docker compose build -q
-          docker compose up -d
-          sleep 10s
-          docker compose run app setup-ci docs-build
-
-      - uses: actions/upload-artifact@v4
-        with:
-          path: builds
-          name: builds
+    uses: opvance/actions/.github/workflows/test-and-docs.yml@main
+    secrets:
+      REPO_TOKEN: ${{ secrets.PAT_ORG_REPO_READ }}
+      BADGES_TOKEN: ${{ secrets.PAT_BADGES }}
 
   ghcr:
-    uses: opvance/actions/.github/workflows/build-image-and-push-to-ghcr.yml@main
+    uses: opvance/actions/.github/workflows/build-image-and-push-to-ghcr.yml@v1
     if: startsWith(github.event.ref, 'refs/tags/v')
     needs: build
     secrets:
-      REPO_TOKEN: ${{ secrets.PAT_SIGIL_CORE_READ }}
+      REPO_TOKEN: ${{ secrets.PAT_ORG_REPO_READ }}
     with:
       image_name: ${{ github.event.repository.name }}
