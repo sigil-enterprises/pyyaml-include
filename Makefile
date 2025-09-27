@@ -4,7 +4,10 @@ setup:
 	pip3 install -e .
 
 setup-dev:
-	pip3 install -e .[dev,test]
+	pip3 install -e .[dev]
+
+setup-ci:
+	pip3 install -e .[test,ci,docs]
 
 test:
 	pytest .
@@ -25,4 +28,5 @@ badge-coverage: coverage
 docs-build: badge-coverage report-coverage
 	mkdocs build
 
-build: docs-build
+
+build: setup-ci docs-build
