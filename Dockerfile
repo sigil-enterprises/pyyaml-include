@@ -6,9 +6,11 @@ RUN apt update && apt install -y git make
 ARG ORGANIZATION=sigil-enterprises
 ENV DEBIAN_FRONTEND=noninteractive
 
-COPY pyproject.toml pyproject.toml
+ENTRYPOINT ["make"]
+
+FROM base AS build
+
+COPY . .
 RUN --mount=type=secret,id=github_token \
   git config --global url."https://$(cat /run/secrets/github_token):@github.com/$ORGANIZATION/".insteadOf "ssh://git@github.com/sigil-enterprises/" \
   && make setup
-
-ENTRYPOINT ["make"]
