@@ -26,6 +26,7 @@ docs-build: badge-coverage report-coverage
 	mkdocs build
 
 docs-deploy:
+	echo $(shell git describe --tags --exact-match || git rev-parse --abbrev-ref HEAD)
 	mike deploy \
 		--push $(shell git describe --tags --exact-match || git rev-parse --abbrev-ref HEAD) \
 		--allow-empty
