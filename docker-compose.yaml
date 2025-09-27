@@ -1,6 +1,6 @@
 services:
   app:
-    image: ghcr.io/${ORGANIZATION:-sigil-enterprises}/${ORGANIZATION:-pyyaml-include}:latest
+    image: ghcr.io/${ORGANIZATION:-sigil-enterprises}/${PROJECT:-pyyaml-include}:latest
     build:
       context: .
       secrets:
