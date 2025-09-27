@@ -1,7 +1,7 @@
 .PHONY: docs tests src
 
 setup:
-	pip3 install -e .[test,docs,ci]
+	pip3 install -e .
 
 setup-dev:
 	pip3 install -e .[dev,test]
@@ -25,10 +25,4 @@ badge-coverage: coverage
 docs-build: badge-coverage report-coverage
 	mkdocs build
 
-docs-deploy:
-	git config --global --add safe.directory /app
-	mike deploy \
-		--push v$(shell python3 -c "import toml; print(toml.load('pyproject.toml')['project']['version'])") \
-		--allow-empty
-
-build: docs-build docs-deploy
+build: docs-build
