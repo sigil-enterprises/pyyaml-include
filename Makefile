@@ -1,13 +1,10 @@
 .PHONY: docs tests src
 
 setup:
-	pip3 install -e .
+	pip3 install -e .[test,ci,docs]
 
 setup-dev:
 	pip3 install -e .[dev]
-
-setup-ci:
-	pip3 install -e .[test,ci,docs]
 
 test:
 	pytest .
@@ -28,5 +25,4 @@ badge-coverage: coverage
 docs-build: badge-coverage report-coverage
 	mkdocs build
 
-
-build: setup-ci docs-build
+build: docs-build
