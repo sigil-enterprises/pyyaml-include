@@ -12,3 +12,5 @@ ln -s -f .tmux/.tmux.conf
 cd /app
 cp .devcontainer/.tmux.conf ~/.tmux.conf.local
 make setup-dev
+
+apt install -y postgresql-client

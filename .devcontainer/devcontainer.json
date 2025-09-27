@@ -1,5 +1,5 @@
 {
-  "name": "sigil-enterprises/pyyaml-include",
+  "name": "${containerEnv:DEV_CONTAINER_NAME:unnamed}",
   "dockerComposeFile": [
     "../docker-compose.yaml",
     "./docker-compose.yaml"
@@ -23,9 +23,17 @@
         "ms-python.python",
         "ms-python.debugpy",
         "Tyriar.sort-lines",
-        "redhat.vscode-yaml"
+        "redhat.vscode-yaml",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg",
+        "adpyke.vscode-sql-formatter",
+        "limejuly.vscode-yaml-block-highlight",
+        "google.geminicodeassist",
+        "GitHub.vscode-pull-request-github",
+        "Gruntfuggly.todo-tree"
       ],
       "settings": {
+        "workbench.editor.labelFormat": "short",
         "files.trimFinalNewlines": true,
         "files.trimTrailingWhitespace": true,
         "python.testing.unittestEnabled": false,
@@ -52,7 +60,22 @@
           "**/.pytest_cache": true,
           "**/*.egg-info": true,
           "**/nohup.out": true
-        }
+        },
+        "sqltools.results.location": "current",
+        "sqltools.results.reuseTabs": "connection",
+        "sqltools.sortColumns": "ordinalnumber",
+        "sqltools.connections": [
+          {
+            "previewLimit": 50,
+            "server": "pgsql",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "postgres",
+            "database": "postgres",
+            "username": "postgres",
+            "password": "admin@123"
+          }
+        ]
       }
     }
   }

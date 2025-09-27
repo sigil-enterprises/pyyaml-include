@@ -1,10 +1,10 @@
 .PHONY: docs tests src
 
+setup:
+	pip3 install -e .[test,docs,ci]
+
 setup-dev:
 	pip3 install -e .[dev,test]
-
-setup-ci:
-	pip3 install -e .[test,docs,ci]
 
 test:
 	pytest .
@@ -26,4 +26,8 @@ docs-build: badge-coverage report-coverage
 	mkdocs build
 
 docs-deploy:
-	mike deploy --push $(cat VERSION) --allow-empty
+	mike deploy \
+		--push $(shell git describe --tags --exact-match || git rev-parse --abbrev-ref HEAD) \
+		--allow-empty
+
+build: docs-build docs-deploy

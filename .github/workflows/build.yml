@@ -1,24 +1,16 @@
 name: Build
 
-on: push
+on:
+  push:
+  workflow_dispatch:
 
 permissions:
   contents: write
   packages: write
 
 jobs:
-
   build:
-    uses: opvance/actions/.github/workflows/test-and-docs.yml@main
+    uses: opvance/actions/.github/workflows/build.yml@v2
     secrets:
-      REPO_TOKEN: ${{ secrets.PAT_ORG_REPO_READ }}
       BADGES_TOKEN: ${{ secrets.PAT_BADGES }}
-
-  ghcr:
-    uses: opvance/actions/.github/workflows/build-image-and-push-to-ghcr.yml@v1
-    if: startsWith(github.event.ref, 'refs/tags/v')
-    needs: build
-    secrets:
-      REPO_TOKEN: ${{ secrets.PAT_ORG_REPO_READ }}
-    with:
-      image_name: ${{ github.event.repository.name }}
+      REPOSITORIES_READ_TOKEN: ${{ secrets.PAT_ORG_REPO_READ }}

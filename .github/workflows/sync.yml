@@ -1,0 +1,15 @@
+name: Sync Fork with Upstream Tags
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 3 * * *'
+
+jobs:
+  call_sync_workflow:
+    uses: opvance/actions/.github/workflows/sync-tags.yml@main
+    secrets:
+      PAT_ORIGIN_WRITE: ${{ secrets.PAT_ORG_REPO_WRITE_WORKFLOW }}
+      PAT_UPSTREAM_READ: ${{ secrets.PAT_UPSTREAM_READ_MTG }}
+    permissions:
+      contents: write

@@ -1,0 +1,16 @@
+site_name: Pyyaml-Include Documentation
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+
+repo_url: https://github.com/sigil-enterprises/pyyaml-include/
+
+site_dir: builds/site
+
+extra:
+  version:
+    provider: mike
+
+plugins:
+  - mkdocstrings

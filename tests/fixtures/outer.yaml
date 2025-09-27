@@ -1,0 +1,5 @@
+main_key: "This is from the main file."
+data: !include tests/fixtures/inner.yaml
+value: !include tests/fixtures/inner.yaml:value
+nested_value: !include tests/fixtures/inner.yaml:obj.nested_value
+importable: !include "@yaml_include/etc/fixtures.yaml:importable"

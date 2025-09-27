@@ -1,0 +1,6 @@
+message: "Hello from the included file!"
+value: 123
+obj:
+  nested_value: 456
+
+contextual: !include "@/contextual.yaml:contextual"

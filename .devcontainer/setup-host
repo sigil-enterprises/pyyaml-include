@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [ -n $CODESPACES ]
 then
@@ -15,3 +15,12 @@ else
     echo "GITHUB_TOKEN=$(gh auth token)" > .env
   fi
 fi
+
+export PROJECT=$(git remote get-url origin | awk -F'[:/]' '{gsub(/\.git$/, "", $NF); print $NF}')
+export ORGANIZATION=$(git remote get-url origin | awk -F'[:/]' '{print $2}')
+export DEV_CONTAINER_NAME="$ORGANIZATION/$PROJECT"
+
+echo "PROJECT=$PROJECT" >> .env
+echo "ORGANIZATION=$ORGANIZATION" >> .env
+echo "DEV_CONTAINER_NAME=$DEV_CONTAINER_NAME" >> .env
+echo "COMPOSE_BAKE=true" >> .env
