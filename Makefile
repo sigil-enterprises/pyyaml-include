@@ -26,9 +26,8 @@ docs-build: badge-coverage report-coverage
 	mkdocs build
 
 docs-deploy:
-	echo $(shell git describe --tags --exact-match || git rev-parse --abbrev-ref HEAD)
 	mike deploy \
-		--push $(shell git describe --tags --exact-match || git rev-parse --abbrev-ref HEAD) \
+		--push v$(shell python3 -c "import toml; print(toml.load('pyproject.toml')['project']['version'])") \
 		--allow-empty
 
 build: docs-build docs-deploy

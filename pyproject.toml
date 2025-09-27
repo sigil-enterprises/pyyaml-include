@@ -30,6 +30,7 @@ test = [
   "pyodbc",
 ]
 docs = [
+  "toml",
   "mike",
   "mkdocs",
   "mkdocs-material",
