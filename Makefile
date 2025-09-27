@@ -26,6 +26,7 @@ docs-build: badge-coverage report-coverage
 	mkdocs build
 
 docs-deploy:
+	git config --global --add safe.directory /app
 	mike deploy \
 		--push v$(shell python3 -c "import toml; print(toml.load('pyproject.toml')['project']['version'])") \
 		--allow-empty
