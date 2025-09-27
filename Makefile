@@ -1,28 +1,37 @@
-.PHONY: docs tests src
+.DEFAULT_GOAL := help
 
-setup:
+help:
+	@awk '{FS = ":.*##"} /^[A-z0-9_-]+:.*?##/ {printf "→ \033[36m%-21s\033[0m %s\n", $$1, $$2} /^##@/ {printf "\n\033[1m%s\033[0m\n", substr($$0, 5)}' $(MAKEFILE_LIST) && echo
+
+
+##@ DevOps
+
+setup: ## Setups environnment
 	pip3 install -e .[test,ci,docs]
 
-setup-dev:
+setup-dev:  ## Setup development environment
 	pip3 install -e .[dev]
 
-test:
-	pytest .
-
-dev:
+dev: ## Run tests on file change
 	ptw
 
-coverage:
+test: ## Run tests
+	pytest .
+
+build: docs-build
+
+
+##@ Internal
+
+coverage:  ## Run test coverage
 	coverage run -m pytest
 
-report-coverage: coverage
+report-coverage: coverage  ## Generate HTML coverage report
 	coverage html
 
-badge-coverage: coverage
+badge-coverage: coverage  ## Generate coverage badge
 	mkdir -p docs/badges
 	coverage-badge -f -o docs/badges/coverage.svg
 
-docs-build: badge-coverage report-coverage
+docs-build: badge-coverage report-coverage ## Generate documentation
 	mkdocs build
-
-build: docs-build
