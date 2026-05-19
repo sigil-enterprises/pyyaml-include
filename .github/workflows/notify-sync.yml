@@ -14,8 +14,8 @@ jobs:
         id: dist-token
         uses: actions/create-github-app-token@v1
         with:
-          app-id: ${{ secrets.CONTRIB_SANDBOX_APP_ID }}
-          private-key: ${{ secrets.CONTRIB_SANDBOX_PRIVATE_KEY }}
+          app-id: ${{ secrets.CT_APP_ID }}
+          private-key: ${{ secrets.CT_PRIVATE_KEY }}
           owner: sigil-enterprises
           repositories: dist
 
