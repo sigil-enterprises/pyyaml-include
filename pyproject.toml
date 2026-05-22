@@ -37,7 +37,13 @@ docs = [
   "mkdocstrings-python",
 ]
 ci = [
-  "coverage-badge",
+  # ``coverage-badge`` depends on ``pkg_resources`` which was removed
+  # in Python 3.13 / modern setuptools. ``genbadge[coverage]`` is the
+  # fleet-standard replacement; same SVG output, parses
+  # ``coverage.xml`` instead of a coverage data file.
+  "genbadge[coverage]",
+  # ``coverage[toml]`` is needed for ``coverage xml`` to read pyproject.
+  "coverage[toml]",
 ]
 
 [tool.coverage.html]

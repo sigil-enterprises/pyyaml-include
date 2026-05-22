@@ -30,8 +30,11 @@ report-coverage: coverage  ## Generate HTML coverage report
 	coverage html
 
 badge-coverage: coverage  ## Generate coverage badge
+	# Generate coverage.xml first (genbadge reads XML, not the
+	# coverage data file directly), then render the badge.
+	coverage xml
 	mkdir -p docs/badges
-	coverage-badge -f -o docs/badges/coverage.svg
+	genbadge coverage -i coverage.xml -o docs/badges/coverage.svg
 
 docs-build: badge-coverage report-coverage ## Generate documentation
 	mkdocs build
