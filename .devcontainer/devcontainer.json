@@ -1,3 +1,5 @@
+# Watermarked by tc from github.com/sigil-enterprises/sigil-toolchain@v0.39.2
+#
 {
   "name": "${containerEnv:DEV_CONTAINER_NAME:unnamed}",
   "dockerComposeFile": [
@@ -6,8 +8,11 @@
   ],
   "workspaceFolder": "/app",
   "service": "app",
-  "initializeCommand": "$((which -a python3 || which -a python) 2>/dev/null | head -n 1) -c \"import os, subprocess, sys; script_sh = '.devcontainer/setup-host'; script_cmd = '.devcontainer/setup-host.cmd'; os_is_nt = os.name == 'nt'; cmd = [script_cmd] if os_is_nt else ['bash', script_sh]; use_shell = True if os_is_nt else False; subprocess.run(cmd, shell=use_shell, check=True)\"",
-  "onCreateCommand": "bash .devcontainer/setup-editor",
+  "initializeCommand": "bash .devcontainer/setup-host",
+  "onCreateCommand": "bash .devcontainer/setup-editor && make setup-dev",
+  "remoteEnv": {
+    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
@@ -24,13 +29,10 @@
         "ms-python.debugpy",
         "Tyriar.sort-lines",
         "redhat.vscode-yaml",
-        "mtxr.sqltools",
-        "mtxr.sqltools-driver-pg",
-        "adpyke.vscode-sql-formatter",
         "limejuly.vscode-yaml-block-highlight",
-        "google.geminicodeassist",
         "GitHub.vscode-pull-request-github",
-        "Gruntfuggly.todo-tree"
+        "Gruntfuggly.todo-tree",
+        "anthropic.claude-code"
       ],
       "settings": {
         "workbench.editor.labelFormat": "short",
@@ -41,9 +43,6 @@
         "python.testing.pytestArgs": [
           "tests"
         ],
-        "terminal.integrated.env.linux": {
-          "PYTHONPATH": "/usr/local/bin/python"
-        },
         "terminal.integrated.customGlyphs": true,
         "terminal.integrated.defaultProfile.linux": "tmux",
         "terminal.integrated.profiles.linux": {
@@ -60,22 +59,7 @@
           "**/.pytest_cache": true,
           "**/*.egg-info": true,
           "**/nohup.out": true
-        },
-        "sqltools.results.location": "current",
-        "sqltools.results.reuseTabs": "connection",
-        "sqltools.sortColumns": "ordinalnumber",
-        "sqltools.connections": [
-          {
-            "previewLimit": 50,
-            "server": "pgsql",
-            "port": 5432,
-            "driver": "PostgreSQL",
-            "name": "postgres",
-            "database": "postgres",
-            "username": "postgres",
-            "password": "admin@123"
-          }
-        ]
+        }
       }
     }
   }

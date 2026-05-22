@@ -1,15 +1,27 @@
+# Watermarked by tc from github.com/sigil-enterprises/sigil-toolchain@v0.39.2
+#
 services:
   app:
-    image: ghcr.io/${ORGANIZATION:-sigil-enterprises}/${PROJECT:-pyyaml-include}:latest
+    image: nexus.opvance.com/docker/${ORGANIZATION}/${PROJECT}:latest
     build:
       context: .
       secrets:
         - github_token
+        - nexus_username
+        - nexus_password
       args:
-        ORGANIZATION: ${ORGANIZATION:-sigil-enterprises}
+        ORGANIZATION: ${ORGANIZATION}
+      cache_from:
+        - type=registry,ref=nexus.opvance.com/docker/${ORGANIZATION}/${PROJECT}:buildcache
     volumes:
       - .:/app
+    env_file:
+      - .env
 
 secrets:
   github_token:
     environment: GITHUB_TOKEN
+  nexus_username:
+    environment: NEXUS_USERNAME
+  nexus_password:
+    environment: NEXUS_PASSWORD
