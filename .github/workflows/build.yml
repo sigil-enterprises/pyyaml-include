@@ -1,49 +1,16 @@
-# Watermarked by tc from github.com/sigil-enterprises/sigil-toolchain@v0.39.2
-#
 name: Build
 
 on:
   push:
-    branches: [main]
-    tags: ['v*']
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+  packages: write
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Build image and run test + docs
-        env:
-          ORGANIZATION:   ${{ github.repository_owner }}
-          PROJECT:        ${{ github.event.repository.name }}
-          GITHUB_TOKEN:   ${{ secrets.PAT_CI }}
-          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-        run: |
-          docker compose build -q
-          docker compose run app test docs
-
-      - uses: actions/upload-artifact@v4
-        with:
-          path: builds
-          name: builds
-
-  nexus:
-    # Publish the wheel + sdist to Nexus medipal-pypi on tag pushes.
-    # Mirrors the pattern used by graphion / fabrix / autonite / lypto so
-    # downstream consumers (lypto, lypto-fhir, ...) can `pip install
-    # pyyaml-include` from the same index they already use, replacing
-    # the historical `git+https://.../pyyaml-include@vX.Y.Z` direct ref.
-    uses: opvance/actions/.github/workflows/build-and-publish-to-nexus-py.yml@main
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    uses: opvance/actions/.github/workflows/build.yml@v2
     secrets:
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      BADGES_TOKEN: ${{ secrets.PAT_BADGES }}
+      REPOSITORIES_READ_TOKEN: ${{ secrets.PAT_ORG_REPO_READ }}

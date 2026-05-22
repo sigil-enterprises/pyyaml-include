@@ -1,12 +1,10 @@
-# Watermarked by tc from github.com/sigil-enterprises/sigil-toolchain@v0.39.2
-#
-site_name: $PROJECT Documentation
+site_name: Pyyaml-Include Documentation
 
 theme:
   name: material
   custom_dir: docs/overrides
 
-repo_url: https://github.com/$ORGANIZATION/$PROJECT/
+repo_url: https://github.com/sigil-enterprises/pyyaml-include/
 
 site_dir: builds/site
 
