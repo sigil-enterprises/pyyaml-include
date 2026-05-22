@@ -1,4 +1,15 @@
+# Watermarked by tc from github.com/sigil-enterprises/toolchain@v0.39.2
+#
+# Normalize line endings to LF in the repo, regardless of OS-level git config.
+# Prevents diff noise from Windows checkouts.
 * text=auto eol=lf
-*.{cmd,[cC][mM][dD]} text eol=crlf
-*.{bat,[bB][aA][tT]} text eol=crlf
-*.{ps1,[pP][sS]1} text eol=crlf
+
+# Binary types — never normalize.
+*.png  binary
+*.jpg  binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.gz   binary
+*.tar  binary

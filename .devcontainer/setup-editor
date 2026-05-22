@@ -1,16 +1,47 @@
+// Watermarked by tc from github.com/sigil-enterprises/sigil-toolchain@v0.39.2
+//
 #!/bin/bash
-DEBIAN_FRONTEND=noninteractive
-apt update
-apt -o DPkg::Options::=--force-confdef install -y wget zsh tmux
-wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | zsh || true
+set -e
 
-cd ~
-tmux kill-server
-git clone --single-branch https://github.com/gpakosz/.tmux.git
-ln -s -f .tmux/.tmux.conf
+export DEBIAN_FRONTEND=noninteractive
 
-cd /app
-cp .devcontainer/.tmux.conf ~/.tmux.conf.local
-make setup-dev
+apt-get update
+apt-get install -y --no-install-recommends \
+  procps jq wget zsh tmux curl ca-certificates nodejs npm
 
-apt install -y postgresql-client
+# oh-my-zsh: clone at a pinned commit instead of piping install.sh to a shell
+OMZ_COMMIT="c4388f62e26bacab0e30b59266e84bfadc7e4e66"
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+  git clone --depth 1 https://github.com/ohmyzsh/ohmyzsh.git "$HOME/.oh-my-zsh"
+  cd "$HOME/.oh-my-zsh" && git fetch --depth 1 origin "$OMZ_COMMIT" && git checkout "$OMZ_COMMIT" && cd /
+  cp "$HOME/.oh-my-zsh/templates/zshrc.zsh-template" "$HOME/.zshrc"
+fi
+
+# tmux config — set TC_TMUX=0 to skip, or TC_TMUX=custom to keep your own config
+TC_TMUX="${TC_TMUX:-default}"
+if [ "$TC_TMUX" != "0" ]; then
+  cd ~
+  tmux kill-server 2>/dev/null || true
+  if [ "$TC_TMUX" = "custom" ] && [ -f "$HOME/.tmux.conf" ]; then
+    # User has their own config and opted to keep it
+    :
+  else
+    if [ ! -d "$HOME/.tmux" ]; then
+      git clone --single-branch https://github.com/gpakosz/.tmux.git "$HOME/.tmux"
+    fi
+    ln -s -f .tmux/.tmux.conf
+    cd /app
+    cp .devcontainer/.tmux.conf.local ~/.tmux.conf.local
+  fi
+fi
+
+# Claude Code: install via npm (verified by npm registry integrity checks)
+if ! command -v claude >/dev/null 2>&1; then
+  npm install -g @anthropic-ai/claude-code 2>/dev/null || true
+fi
+
+# Ensure local bin is on PATH (for pip-installed tools)
+export PATH="$HOME/.local/bin:$PATH"
+if ! grep -q 'HOME/.local/bin' "$HOME/.zshrc" 2>/dev/null; then
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+fi

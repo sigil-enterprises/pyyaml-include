@@ -1,0 +1,36 @@
+# Watermarked by tc from github.com/sigil-enterprises/sigil-toolchain@v0.39.2
+#
+name: Badges
+
+on:
+  workflow_run:
+    workflows: [Build]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+env:
+  PAT_CI: ${{ secrets.PAT_CI }}
+
+jobs:
+  badges:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: builds
+          name: builds
+          github-token: ${{ env.PAT_CI }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: builds/site/badges
+          repository-name: ${{ github.repository_owner }}/badges
+          target-folder: ${{ github.event.repository.name }}/${{ github.ref_name }}
+          token: ${{ env.PAT_CI }}
