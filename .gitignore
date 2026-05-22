@@ -1,33 +1,14 @@
-# Watermarked by tc from github.com/sigil-enterprises/sigil-toolchain@v0.39.2
-#
-# ─────────────────────────────────────────────
-# python layer .gitignore — pinned by toolchain
-#
-# This file is overwritten on every `tc update`. For project-local ignores
-# that should NOT be committed, use .git/info/exclude (git-native, untracked).
-# Supersedes base/.gitignore — must keep universal entries so the
-# ignore-gitignore-secrets / ignore-gitignore-os checks still pass.
-# Must NOT exclude .toolchain/ or .toolkit/ (toolchain-not-gitignored check).
-
-# Secrets / environments
+# Environments
 .env
-.env.*
 .venv
 .local
-
-# OS
-.DS_Store
-Thumbs.db
-
-# IDE
-.idea/
-.vscode/settings.json
 
 # Logs
 logs
 *.log
 nohup.out
 pip-log.txt
+pip-delete-this-directory.txt
 
 # Runtime data
 pids
@@ -35,14 +16,13 @@ pids
 *.seed
 *.pid.lock
 
-# Byte-compiled / optimized
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
 
-# setuptools-scm generated version file
-src/*/_version.py
+# C extensions
+*.so
 
 # Distribution / packaging
 .Python
@@ -66,6 +46,10 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+# PyInstaller
+*.manifest
+*.spec
+
 # Unit test / coverage reports
 htmlcov/
 .coverage
@@ -76,9 +60,15 @@ coverage.xml
 *.py,cover
 .pytest_cache/
 
-# Linter caches
-.ruff_cache/
-.mypy_cache/
-
-# Docs
+# Sphinx documentation
 docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# VSCode
+.vscode/settings.json
+
+# Mac
+.DS_Store

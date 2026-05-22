@@ -1,71 +1,26 @@
-// Watermarked by tc from github.com/sigil-enterprises/sigil-toolchain@v0.39.2
-//
 #!/usr/bin/env bash
-set -euo pipefail
 
-ENV_FILE=".env"
+if [ -n $CODESPACES ]
+then
+  echo "GITHUB_TOKEN=$(gh auth token)" > .env
 
-# ── helper: idempotent KEY=VALUE upsert into $ENV_FILE ──────────────────────
-set_env() {
-  local key="$1" value="$2" tmp
-  tmp="$(mktemp)"
-
-  [[ -f "$ENV_FILE" ]] || : > "$ENV_FILE"
-
-  awk -v k="$key" -v v="$value" '
-    BEGIN { found=0 }
-    $0 ~ ("^" k "=") { print k "=\"" v "\""; found=1; next }
-    { print }
-    END { if (!found) print k "=\"" v "\"" }
-  ' "$ENV_FILE" > "$tmp"
-
-  [[ -f "$ENV_FILE.bak" ]] || cp -f "$ENV_FILE" "$ENV_FILE.bak" 2>/dev/null || true
-  mv "$tmp" "$ENV_FILE"
-}
-
-# ── codespaces vs local token handling ──────────────────────────────────────
-if [[ -n "${CODESPACES:-}" ]]; then
-  if command -v gh >/dev/null 2>&1; then
-    set_env "GITHUB_TOKEN" "$(gh auth token)"
-  fi
 else
-  if [[ -f "$ENV_FILE" ]]; then
-    # shellcheck disable=SC1090
-    set +u; source "$ENV_FILE"; set -u
-    if [[ -n "${GHCR_TOKEN:-}" ]]; then
-      echo "$GHCR_TOKEN" | docker login ghcr.io \
-        -u "$(git config --get user.email)" \
-        --password-stdin
-    fi
-  fi
-  if ! grep -q '^GITHUB_TOKEN=' "$ENV_FILE" 2>/dev/null; then
-    if command -v gh >/dev/null 2>&1; then
-      set_env "GITHUB_TOKEN" "$(gh auth token)"
-    fi
+  if [ -e ".env" ]
+  then
+    source .env
+    echo $GHCR_TOKEN | docker login ghcr.io \
+      -u $(git config --get user.email) \
+      --password-stdin
+  else
+    echo "GITHUB_TOKEN=$(gh auth token)" > .env
   fi
 fi
 
-# ── derive PROJECT / ORGANIZATION / DEV_CONTAINER_NAME ──────────────────────
-origin="$(git remote get-url origin)"
-project="$(printf '%s' "$origin" | awk -F'[:/]' '{gsub(/\.git$/, "", $NF); print $NF}')"
-organization="$(printf '%s' "$origin" | awk -F'[:/]' '{
-  for (i=1;i<=NF;i++) if ($i ~ /github\.com$/) {print $(i+1); exit}
-}')"
-dev_container_name="${organization}/${project}"
+export PROJECT=$(git remote get-url origin | awk -F'[:/]' '{gsub(/\.git$/, "", $NF); print $NF}')
+export ORGANIZATION=$(git remote get-url origin | awk -F'[:/]' '{print $2}')
+export DEV_CONTAINER_NAME="$ORGANIZATION/$PROJECT"
 
-set_env "PROJECT" "$project"
-set_env "ORGANIZATION" "$organization"
-set_env "DEV_CONTAINER_NAME" "$dev_container_name"
-set_env "COMPOSE_BAKE" "true"
-
-# ── Nexus credentials ──────────────────────────────────────────────────────
-if [[ -n "${NEXUS_USERNAME:-}" ]] && [[ -n "${NEXUS_PASSWORD:-}" ]]; then
-  set_env "NEXUS_USERNAME" "$NEXUS_USERNAME"
-  set_env "NEXUS_PASSWORD" "$NEXUS_PASSWORD"
-fi
-
-# ── capture host git identity so the container can reuse it ────────────────
-git_user_name="$(git config --global user.name 2>/dev/null || true)"
-git_user_email="$(git config --global user.email 2>/dev/null || true)"
-[[ -n "$git_user_name" ]]  && set_env "GIT_USER_NAME"  "$git_user_name"
-[[ -n "$git_user_email" ]] && set_env "GIT_USER_EMAIL" "$git_user_email"
+echo "PROJECT=$PROJECT" >> .env
+echo "ORGANIZATION=$ORGANIZATION" >> .env
+echo "DEV_CONTAINER_NAME=$DEV_CONTAINER_NAME" >> .env
+echo "COMPOSE_BAKE=true" >> .env

@@ -1,14 +1,12 @@
-# Watermarked by tc from github.com/sigil-enterprises/sigil-toolchain@v0.39.2
-#
 [project]
 name = "pyyaml-include"
-dynamic = ["version"]
-description = "YAML !include tag — read other YAML files (and other formats via fsspec) directly from inside a YAML document."
+version = "1.1.0"
+description = ""
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
-  { name = "Liu Xue Yan",       email = "liu_xue_yan@foxmail.com" },
-  { name = "Sigil Enterprises", email = "engineering@sigil-enterprises.com" },
+  { name="Liu Xue Yan", email="liu_xue_yan@foxmail.com" },
+  { name="Tiago Taveira-Gomes", email="tiago.taveira@sigil-enterprises.com" },
 ]
 dependencies = [
   "PyYAML~=6.0",
@@ -18,33 +16,38 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/sigil-enterprises/pyyaml-include"
-Issues   = "https://github.com/sigil-enterprises/pyyaml-include/issues"
+Issues = "https://github.com/sigil-enterprises/pyyaml-include/issues"
 
 [project.optional-dependencies]
-test = [
-  "pytest",
-]
-ci = [
-  "genbadge[coverage]",
-]
-docs = [
-  "mike",
-  "mkdocs",
-  "mkdocs-material",
-  "mkdocstrings-python",
-]
 dev = [
   "pyyaml-include[test]",
   "pyyaml-include[docs]",
   "pyyaml-include[ci]",
   "pytest-watch",
 ]
+test = [
+  "pytest",
+  "pyodbc",
+]
+docs = [
+  "toml",
+  "mike",
+  "mkdocs",
+  "mkdocs-material",
+  "mkdocstrings-python",
+]
+ci = [
+  # ``coverage-badge`` depends on ``pkg_resources`` which was removed
+  # in Python 3.13 / modern setuptools. ``genbadge[coverage]`` is the
+  # fleet-standard replacement; same SVG output, parses
+  # ``coverage.xml`` instead of a coverage data file.
+  "genbadge[coverage]",
+  # ``coverage[toml]`` is needed for ``coverage xml`` to read pyproject.
+  "coverage[toml]",
+]
 
 [tool.coverage.html]
 directory = "docs/reports/coverage"
-
-[tool.coverage.xml]
-output = "docs/reports/coverage/coverage.xml"
 
 [tool.coverage.run]
 data_file = "var/.coverage"
@@ -60,17 +63,9 @@ exclude_also = [
   "except PackageNotFoundError:",
 ]
 
-[tool.pytest.ini_options]
-addopts = "--import-mode=importlib"
-testpaths = ["tests"]
-
-[tool.setuptools_scm]
-# Distribution name ``pyyaml-include``; importable as ``yaml_include``
-# (the import name predates the distribution rename). setuptools-scm
-# writes the resolved version into the module so ``__version__`` is
-# available at runtime without importlib.metadata gymnastics.
-version_file = "src/yaml_include/_version.py"
-
 [build-system]
-requires = ["setuptools >= 75.0", "setuptools-scm >= 8.0"]
+requires = [
+  "setuptools >= 61.0",
+  "setuptools-scm >= 8.0",
+]
 build-backend = "setuptools.build_meta"
