@@ -1,0 +1,112 @@
+# Watermarked by tc from github.com/sigil-enterprises/sigil-toolchain@v0.45.2
+#
+name: GitHub Apps Dispatch
+
+# Caller-side dispatcher for gha (GitHub App Provisioner).
+#
+# Fires one `apply-requested` `repository_dispatch` at
+# `<owner>/github-apps` (override via `vars.GHA_HUB_REPO`) on operator
+# demand. The hub side (`github-apps-hub` layer) receives the dispatch
+# and runs `gha update --strict --no-install --config gha.yaml` to
+# reconcile App profile / permissions / install scope / org secrets
+# against the YAML source of truth.
+#
+# Trigger is `workflow_dispatch` only — App reconciliation is an
+# out-of-band ops action (not part of any per-release pipeline), so we
+# deliberately do NOT auto-fire on push/release events. Operators run
+# this from the Actions tab when they:
+#   - just added a new repo and want it picked up by an org-wide
+#     selection-by-list App,
+#   - just edited the App's permissions in the hub's yaml and want the
+#     new permissions pushed to the live App,
+#   - just want to confirm the hub is reachable + responsive.
+#
+# Gracefully no-ops (with a summary line) when:
+#   - `CT_APP_ID` / `CT_PRIVATE_KEY` are not configured on this repo
+#   - `<owner>/github-apps` is unreachable with the minted token
+
+on:
+  workflow_dispatch:
+    inputs:
+      op:
+        description: "Operation to run on the hub"
+        type: choice
+        options: [plan, apply, status]
+        default: plan
+      app:
+        description: "Optional single app slug to filter on (default: all)"
+        type: string
+        default: ""
+
+permissions: {}
+
+concurrency:
+  # Coalesce repeated manual triggers from the same repo into one
+  # dispatch — the hub will reconcile against the freshest config
+  # anyway.
+  group: github-apps-dispatch-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve hub
+        id: cfg
+        env:
+          OWNER: ${{ github.repository_owner }}
+          HUB_OVERRIDE: ${{ vars.GHA_HUB_REPO }}
+        run: |
+          set -euo pipefail
+          hub="${HUB_OVERRIDE:-${OWNER}/github-apps}"
+          {
+            echo "hub=${hub}"
+            echo "hub_owner=${hub%%/*}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Mint CT app token
+        id: ct-token
+        continue-on-error: true
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.CT_APP_ID }}
+          private-key: ${{ secrets.CT_PRIVATE_KEY }}
+          owner: ${{ steps.cfg.outputs.hub_owner }}
+
+      - name: Skip if CT app not configured
+        if: steps.ct-token.outcome != 'success'
+        env:
+          HUB: ${{ steps.cfg.outputs.hub }}
+        run: |
+          echo "::warning::CT_APP_ID / CT_PRIVATE_KEY missing — github-apps dispatch skipped"
+          {
+            echo "- **GitHub Apps dispatch skipped** — CT_APP_ID / CT_PRIVATE_KEY not configured."
+            echo ""
+            echo "  Install the ct GitHub App on \`${HUB}\` and set the App's id and"
+            echo "  private-key as repository secrets on this repo."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+
+      - name: Fire apply-requested
+        env:
+          GH_TOKEN: ${{ steps.ct-token.outputs.token }}
+          HUB: ${{ steps.cfg.outputs.hub }}
+          OP: ${{ inputs.op }}
+          APP: ${{ inputs.app }}
+          SOURCE: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          payload="$(jq -nc \
+            --arg op "$OP" --arg app "$APP" --arg src "$SOURCE" \
+            '{event_type: "apply-requested",
+              client_payload: ({op: $op, source: $src}
+                + (if $app == "" then {} else {app: $app} end))}')"
+          printf '%s' "$payload" | gh api "repos/${HUB}/dispatches" --method POST --input -
+          {
+            echo "- triggered \`apply-requested\` on \`${HUB}\`"
+            echo "  - op: \`${OP}\`"
+            echo "  - source: \`${SOURCE}\`"
+            if [ -n "$APP" ]; then
+              echo "  - app: \`${APP}\`"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
