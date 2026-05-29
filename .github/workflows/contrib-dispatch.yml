@@ -1,0 +1,128 @@
+# Watermarked by tc from github.com/sigil-enterprises/sigil-toolchain@v0.44.0
+#
+name: Contrib Dispatch
+
+# Caller-side dispatcher for ct (Contribution Tool).
+#
+# Triggers whenever a versioned release is published on this repo (the
+# build that produced the release has finished and the artifacts the
+# hub will pull from `tools-latest` / the version-tag are available).
+# Mints a `CT_APP_ID` installation token scoped to the caller's owner
+# org and fires one `repository_dispatch` of type `sync-requested` at
+# `<owner>/contrib` (override via `vars.CONTRIB_HUB_REPO`) with this
+# repo's name in `client_payload.repo`.
+#
+# The receiver (`contrib-hub` layer, installed on `<org>/contrib`)
+# runs `ct apply --auto-approve --manifest <…> --repo <…>` and does
+# the actual cross-org push.
+#
+# Replaces the old cross-org reusable
+# `sigil-enterprises/sigil-toolchain/.github/workflows/contrib-dispatch.yml@vX.Y.Z`
+# that callers chained from their build workflows — fixes here
+# propagate to every consumer via `tc update`.
+#
+# Gracefully no-ops (with a summary line) when:
+#   - `CT_APP_ID` / `CT_PRIVATE_KEY` are not configured on this repo
+#   - `<owner>/contrib` is unreachable with the minted token
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: "Repo name to sync (default: this repo)"
+        type: string
+        default: ""
+      manifest:
+        description: "Manifest filename in the hub (default: contrib.yaml or vars.CONTRIB_MANIFEST)"
+        type: string
+        default: ""
+      org:
+        description: "Optional single target-org filter"
+        type: string
+        default: ""
+
+permissions: {}
+
+concurrency:
+  # Coalesce rapid sequential releases on the same repo into one dispatch
+  # — the hub-side `ct apply` will pick up the latest version anyway.
+  group: contrib-dispatch-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve hub + manifest
+        id: cfg
+        env:
+          OWNER: ${{ github.repository_owner }}
+          HUB_OVERRIDE: ${{ vars.CONTRIB_HUB_REPO }}
+          MANIFEST_OVERRIDE: ${{ vars.CONTRIB_MANIFEST }}
+          REPO_OVERRIDE: ${{ vars.CONTRIB_REPO_NAME }}
+          MANIFEST_INPUT: ${{ inputs.manifest }}
+          REPO_INPUT: ${{ inputs.repo }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          set -euo pipefail
+          hub="${HUB_OVERRIDE:-${OWNER}/contrib}"
+          manifest="${MANIFEST_INPUT:-${MANIFEST_OVERRIDE:-contrib.yaml}}"
+          # Resolution order for the artifact name passed to `ct apply --repo`:
+          #   1. manual workflow_dispatch input
+          #   2. `vars.CONTRIB_REPO_NAME` (set when the manifest entry uses a
+          #      different name than this repo, e.g. `medis-bod-medis`)
+          #   3. this repo's name
+          repo="${REPO_INPUT:-${REPO_OVERRIDE:-${REPO_NAME}}}"
+          {
+            echo "hub=${hub}"
+            echo "hub_owner=${hub%%/*}"
+            echo "manifest=${manifest}"
+            echo "repo=${repo}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Mint CT app token
+        id: ct-token
+        continue-on-error: true
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.CT_APP_ID }}
+          private-key: ${{ secrets.CT_PRIVATE_KEY }}
+          owner: ${{ steps.cfg.outputs.hub_owner }}
+
+      - name: Skip if CT app not configured
+        if: steps.ct-token.outcome != 'success'
+        env:
+          HUB: ${{ steps.cfg.outputs.hub }}
+        run: |
+          echo "::warning::CT_APP_ID / CT_PRIVATE_KEY missing — contrib dispatch skipped"
+          {
+            echo "- **Contrib dispatch skipped** — CT_APP_ID / CT_PRIVATE_KEY not configured."
+            echo ""
+            echo "  Install the ct GitHub App on \`${HUB}\` and set the App's id and"
+            echo "  private-key as repository secrets on this repo."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+
+      - name: Fire sync-requested
+        env:
+          GH_TOKEN: ${{ steps.ct-token.outputs.token }}
+          HUB: ${{ steps.cfg.outputs.hub }}
+          MANIFEST: ${{ steps.cfg.outputs.manifest }}
+          REPO: ${{ steps.cfg.outputs.repo }}
+          ORG: ${{ inputs.org }}
+        run: |
+          set -euo pipefail
+          payload="$(jq -nc \
+            --arg m "$MANIFEST" --arg r "$REPO" --arg o "$ORG" \
+            '{event_type: "sync-requested",
+              client_payload: ({manifest: $m, repo: $r}
+                + (if $o == "" then {} else {org: $o} end))}')"
+          printf '%s' "$payload" | gh api "repos/${HUB}/dispatches" --method POST --input -
+          {
+            echo "- triggered \`sync-requested\` on \`${HUB}\`"
+            echo "  - manifest: \`${MANIFEST}\`"
+            echo "  - repo: \`${REPO}\`"
+            [ -n "$ORG" ] && echo "  - org: \`${ORG}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
