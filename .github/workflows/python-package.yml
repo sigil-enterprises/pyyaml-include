@@ -22,7 +22,7 @@ on:
 
 jobs:
   get-version-pep440:
-    runs-on: ubuntu-latest
+    runs-on: ${{ startsWith(vars.CI_RUNS_ON, '[') && fromJSON(vars.CI_RUNS_ON) || vars.CI_RUNS_ON || 'ubuntu-latest' }}
     outputs:
       version: ${{ steps.get-version.outputs.version }}
     steps:
@@ -39,7 +39,7 @@ jobs:
           echo "version=${PEP440_VERSION}" | tee -a $GITHUB_OUTPUT
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ startsWith(vars.CI_RUNS_ON, '[') && fromJSON(vars.CI_RUNS_ON) || vars.CI_RUNS_ON || 'ubuntu-latest' }}
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
@@ -74,7 +74,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ${{ startsWith(vars.CI_RUNS_ON, '[') && fromJSON(vars.CI_RUNS_ON) || vars.CI_RUNS_ON || 'ubuntu-latest' }}
     needs: [get-version-pep440, test]
     if: needs.get-version-pep440.outputs.version != ''
     steps:
