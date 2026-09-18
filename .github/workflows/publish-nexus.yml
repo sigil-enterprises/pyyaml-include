@@ -1,0 +1,51 @@
+# Publish the sdist + wheel to sigil-enterprises-pypi-internal.
+#
+# WHY THIS EXISTS ALONGSIDE build.yml. build.yml delegates to
+# `opvance/actions/.github/workflows/build-and-publish-to-nexus-py.yml@main`,
+# which hardcodes `runs-on: ubuntu-latest` and exposes no runner input. The
+# sigil-enterprises Actions budget is exhausted, so every GitHub-hosted job is
+# refused before it starts ("The job was not started because an Actions budget
+# is preventing further use") - the publish leg cannot run there at all.
+#
+# This workflow routes through `vars.CI_RUNS_ON` (gama-arc since 2026-09-16)
+# like the rest of the fleet, so it costs no hosted minutes. Fixing the
+# reusable workflow to accept a runner is the better long-term fix; it lives in
+# another repository and would have to land there first.
+name: Publish to Nexus
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ${{ startsWith(vars.CI_RUNS_ON, '[') && fromJSON(vars.CI_RUNS_ON) || vars.CI_RUNS_ON || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Full history so any version derivation sees the tags. This repo
+          # pins a STATIC `version` in pyproject.toml, so the tag name does not
+          # decide the artifact version - the pyproject value does. Keep the
+          # two in step when cutting a release.
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v4
+
+      - name: Build
+        run: uv build
+
+      - name: Show what was built
+        # The published version comes from pyproject.toml, not the tag, so
+        # print it: a mismatch between tag and artifact is otherwise silent.
+        run: ls -l dist/
+
+      - name: Publish to Nexus
+        env:
+          UV_PUBLISH_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          UV_PUBLISH_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+        # The hosted repo is writePolicy=ALLOW_ONCE: a version that already has
+        # a component record - including the orphaned records the 2026-09-11
+        # repair left with no files - cannot be re-uploaded. Bump rather than
+        # retry on a 400 here.
+        run: uv publish --publish-url "https://nexus.opvance.com/repository/sigil-enterprises-pypi-internal/" dist/*
